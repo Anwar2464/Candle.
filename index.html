@@ -1,0 +1,113 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASCII Fire Animation</title>
+
+<style>
+  * { margin: 0; padding: 0; }
+  body {
+    background: #000;
+    overflow: hidden;
+  }
+  canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+</style>
+</head>
+<body>
+<canvas id="fire"></canvas>
+
+<script>
+const canvas = document.getElementById("fire");
+const ctx = canvas.getContext("2d");
+
+let w, h, cols, rows, heat;
+
+const chars = " .:-=+*#%@";
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  // Each cell represents one character of the fire
+  w = 9;
+  h = 12;
+  cols = Math.ceil(canvas.width / w);
+  rows = Math.ceil(canvas.height / h);
+
+  heat = new Array(cols * rows).fill(0);
+}
+
+window.addEventListener("resize", resize);
+resize();
+
+function animate() {
+  // Create random heat at the bottom
+  for (let x = 0; x < cols; x++) {
+    heat[(rows - 1) * cols + x] =
+      Math.random() > 0.12 ? Math.random() * 255 : 0;
+  }
+
+  // Spread the heat upward
+  for (let y = 0; y < rows - 1; y++) {
+    for (let x = 0; x < cols; x++) {
+      const below = (y + 1) * cols + x;
+      const left = (y + 1) * cols + Math.max(0, x - 1);
+      const right = (y + 1) * cols + Math.min(cols - 1, x + 1);
+      const farBelow = Math.min(rows - 1, y + 2) * cols + x;
+
+      const value = (
+        heat[below] +
+        heat[left] +
+        heat[right] +
+        heat[farBelow]
+      ) / 4;
+
+      heat[y * cols + x] = Math.max(
+        0, value - Math.random() * 22
+      );
+    }
+  }
+
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.font = "12px monospace";
+  ctx.textBaseline = "top";
+
+  // Draw the flames using colored characters
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const value = heat[y * cols + x];
+
+      if (value < 18) continue;
+
+      let color;
+      if (value > 205) color = "#ffffff";
+      else if (value > 155) color = "#fff0a0";
+      else if (value > 105) color = "#ff9b24";
+      else if (value > 55) color = "#ff4510";
+      else color = "#a51b08";
+
+      ctx.fillStyle = color;
+
+      const index = Math.min(
+        chars.length - 1,
+        Math.floor(value / 256 * chars.length)
+      );
+
+      ctx.fillText(chars[index], x * w, y * h);
+    }
+  }
+
+  requestAnimationFrame(animate);
+}
+
+animate();
+</script>
+</body>
+</html>
